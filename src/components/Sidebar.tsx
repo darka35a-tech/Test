@@ -8,7 +8,8 @@ import {
   GraduationCap,
   BookOpen,
   PieChart,
-  UserPlus
+  UserPlus,
+  FileText
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { type UserRole } from "../types";
@@ -24,13 +25,13 @@ export default function Sidebar({ activeView, onViewChange, onLogout, userRole }
   const menuItems = [
     { id: "dashboard", label: "لوحة التحكم", icon: LayoutDashboard },
     { id: "classes", label: "الفصول الدراسية", icon: BookOpen },
-    { id: "students", label: "قائمة الطلاب", icon: Users },
     { id: "reports", label: "التقارير", icon: PieChart },
   ];
 
   if (userRole === 'admin') {
     menuItems.push({ id: "manageTeachers", label: "إدارة المعلمات", icon: UserPlus });
     menuItems.push({ id: "manageStudents", label: "إدارة الطلاب", icon: GraduationCap });
+    menuItems.push({ id: "comprehensiveReport", label: "تقرير شامل", icon: FileText });
   }
 
   return (

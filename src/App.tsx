@@ -8,10 +8,10 @@ import Sidebar from "./components/Sidebar";
 import Dashboard from "./components/Dashboard";
 import ClassesView from "./components/ClassesView";
 import ClassDetailView from "./components/ClassDetailView";
-import StudentsView from "./components/StudentsView";
 import ReportsView from "./components/ReportsView";
 import ManageTeachersView from "./components/ManageTeachersView";
 import ManageStudentsView from "./components/ManageStudentsView";
+import ComprehensiveReportView from "./components/ComprehensiveReportView";
 import LoginView from "./components/LoginView";
 import { type Class, type TeacherData, type AppUser, type TeacherAccount, type Student } from "./types";
 import { loadData, saveData } from "./lib/storage";
@@ -207,6 +207,7 @@ export default function App() {
                     onBack={() => setSelectedClass(null)}
                     onUpdateClass={updateClass}
                     userRole={currentUser.role}
+                    userSubject={currentUser.subject}
                  />
               ) : (
                 <>
@@ -219,11 +220,13 @@ export default function App() {
                       userRole={currentUser.role}
                     />
                   )}
-                  {activeView === "students" && (
-                     <StudentsView teacherData={viewData} userRole={currentUser.role} />
-                  )}
+
                   {activeView === "reports" && (
-                     <ReportsView teacherData={viewData} />
+                     <ReportsView 
+                       teacherData={viewData} 
+                       userSubject={currentUser.subject}
+                       userRole={currentUser.role}
+                     />
                   )}
                   {activeView === "manageTeachers" && (
                     <ManageTeachersView 
@@ -241,6 +244,9 @@ export default function App() {
                       onUpdateStudent={handleUpdateStudent}
                       onRemoveStudent={handleRemoveStudent}
                     />
+                  )}
+                  {activeView === "comprehensiveReport" && (
+                    <ComprehensiveReportView teacherData={data} />
                   )}
                 </>
               )}

@@ -1,5 +1,6 @@
 import React from "react";
 import { type TeacherData, type Student } from "../types";
+import { FIXED_ASSIGNMENTS } from "../constants";
 import { 
   TrendingUp, 
   Award, 
@@ -22,16 +23,16 @@ interface ReportsViewProps {
   teacherData: TeacherData;
 }
 
-export default function ReportsView({ teacherData }: ReportsViewProps) {
+export default function ReportsView({ teacherData, userSubject, userRole }: { teacherData: TeacherData, userSubject?: string, userRole?: 'admin' | 'teacher' }) {
+  const [selectedSubject, setSelectedSubject] = React.useState(userSubject || "عربي");
+
   const allStudents = (teacherData.classes || []).flatMap(c => 
     (c.students || []).map(s => {
-      // Calculate final weighted grade for analysis
-      const weightedPoints = (c.assignments || []).reduce((acc, a) => {
-        const score = (s.grades || {})[a.id] || 0;
-        return acc + (score / (a.maxScore || 1)) * a.weight;
-      }, 0);
-      const totalWeight = (c.assignments || []).reduce((acc, a) => acc + a.weight, 0);
-      const grade = totalWeight > 0 ? (weightedPoints / totalWeight * 100) : 0;
+      // Calculate final total based on fixed assignments for the selected subject
+      const subjectGrades = (s.grades || {})[selectedSubject] || {};
+      const totalScore = FIXED_ASSIGNMENTS.reduce((acc, a) => acc + (subjectGrades[a.id] || 0), 0);
+      const maxPossible = FIXED_ASSIGNMENTS.reduce((acc, a) => acc + (a.maxScore || 0), 0);
+      const grade = maxPossible > 0 ? (totalScore / maxPossible * 100) : 0;
       
       return { ...s, finalGrade: grade, className: c.name };
     })
@@ -56,15 +57,35 @@ export default function ReportsView({ teacherData }: ReportsViewProps) {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center px-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-2">
         <div>
-          <h2 className="text-2xl font-bold text-indigo-950 font-sans">التقارير الذكية والتحليل</h2>
+          <h2 className="text-2xl font-bold text-indigo-950 font-sans flex items-center gap-3">
+            التقارير الذكية والتحليل
+            <span className="text-sm font-black text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full">{selectedSubject}</span>
+          </h2>
           <p className="text-indigo-800/60 font-medium">تحليل تلقائي لمستويات الطلاب بناءً على البيانات المرصودة</p>
         </div>
-        <button className="bg-white/80 border border-white/60 text-indigo-900 px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-white transition-all font-bold shadow-sm backdrop-blur-md">
-          <Download size={20} />
-          <span>تصدير تقرير شامل (PDF)</span>
-        </button>
+        <div className="flex items-center gap-3">
+          {userRole === 'admin' && (
+            <div className="flex items-center gap-2 bg-white/50 border border-white/60 p-1 rounded-xl">
+              <label className="text-[10px] font-black text-indigo-950/40 pr-2">تصفية حسب:</label>
+              <select 
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value)}
+                className="bg-indigo-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg outline-none cursor-pointer"
+              >
+                <option value="عربي">عربي</option>
+                <option value="انجليزي">انجليزي</option>
+                <option value="علوم">علوم</option>
+                <option value="رياضيات">رياضيات</option>
+              </select>
+            </div>
+          )}
+          <button className="bg-white/80 border border-white/60 text-indigo-900 px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-white transition-all font-bold shadow-sm backdrop-blur-md">
+            <Download size={20} />
+            <span className="hidden sm:inline">تصدير (PDF)</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

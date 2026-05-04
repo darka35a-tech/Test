@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { type Class, type Student, type Assignment } from "../types";
+import { FIXED_ASSIGNMENTS, getLetterGrade } from "../constants";
 import { 
   Plus, 
   ArrowRight, 
@@ -24,16 +25,17 @@ interface ClassDetailViewProps {
   onBack: () => void;
   onUpdateClass: (updatedClass: Class) => void;
   userRole: 'teacher' | 'admin';
+  userSubject?: string;
 }
 
-export default function ClassDetailView({ selectedClass, onBack, onUpdateClass, userRole }: ClassDetailViewProps) {
+export default function ClassDetailView({ selectedClass, onBack, onUpdateClass, userRole, userSubject }: ClassDetailViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [editingGrade, setEditingGrade] = useState<{sid: string, aid: string} | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [currentSubject, setCurrentSubject] = useState(userSubject || "عربي");
 
   const students = (selectedClass.students || []).filter(s => s.name.includes(searchTerm));
 
@@ -41,7 +43,18 @@ export default function ClassDetailView({ selectedClass, onBack, onUpdateClass, 
     const numValue = parseInt(value) || 0;
     const updatedStudents = (selectedClass.students || []).map(s => {
       if (s.id === studentId) {
-        return { ...s, grades: { ...(s.grades || {}), [assignmentId]: numValue } };
+        const studentGrades = s.grades || {};
+        const subjectGrades = studentGrades[currentSubject] || {};
+        return {
+          ...s,
+          grades: {
+            ...studentGrades,
+            [currentSubject]: {
+              ...subjectGrades,
+              [assignmentId]: numValue
+            }
+          }
+        };
       }
       return s;
     });
@@ -81,24 +94,6 @@ export default function ClassDetailView({ selectedClass, onBack, onUpdateClass, 
     onUpdateClass({ ...selectedClass, students: [...(selectedClass.students || []), ...newStudents] });
   };
 
-  const [showAddAssignmentForm, setShowAddAssignmentForm] = useState(false);
-  const [newAssignmentTitle, setNewAssignmentTitle] = useState("");
-
-  const handleAddAssignment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newAssignmentTitle.trim()) {
-      const newAssignment: Assignment = {
-        id: Math.random().toString(36).substr(2, 9),
-        title: newAssignmentTitle.trim(),
-        maxScore: 100,
-        weight: 10
-      };
-      onUpdateClass({ ...selectedClass, assignments: [...(selectedClass.assignments || []), newAssignment] });
-      setNewAssignmentTitle("");
-      setShowAddAssignmentForm(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -107,10 +102,28 @@ export default function ClassDetailView({ selectedClass, onBack, onUpdateClass, 
         </button>
         <div>
           <h2 className="text-2xl font-bold text-indigo-950">{selectedClass.name}</h2>
-          <div className="flex gap-4 mt-1">
+          <div className="flex flex-wrap items-center gap-4 mt-1">
              <span className="text-sm text-indigo-800/60 font-medium">{(selectedClass.students || []).length} طالب</span>
              <span className="text-sm text-indigo-800/20">•</span>
-             <span className="text-sm text-indigo-800/60 font-medium">{(selectedClass.assignments || []).length} عملية تقييم</span>
+             <span className="text-sm text-indigo-800/60 font-medium">{FIXED_ASSIGNMENTS.length} بنود تقييم ثابتة</span>
+             <span className="text-sm text-indigo-800/20">•</span>
+             <div className="flex items-center gap-2">
+               <span className="text-sm text-indigo-800/60 font-medium">المادة الحالية:</span>
+               {userRole === 'admin' ? (
+                 <select 
+                   value={currentSubject}
+                   onChange={(e) => setCurrentSubject(e.target.value)}
+                   className="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg px-2 py-1 outline-none ring-offset-2 focus:ring-2 focus:ring-indigo-500"
+                 >
+                   <option value="عربي">عربي</option>
+                   <option value="انجليزي">انجليزي</option>
+                   <option value="علوم">علوم</option>
+                   <option value="رياضيات">رياضيات</option>
+                 </select>
+               ) : (
+                 <span className="text-sm font-black text-indigo-600 underline decoration-indigo-200 underline-offset-4">{currentSubject}</span>
+               )}
+             </div>
           </div>
         </div>
       </div>
@@ -145,35 +158,6 @@ export default function ClassDetailView({ selectedClass, onBack, onUpdateClass, 
               </button>
             </>
           )}
-          
-          <div className="flex items-center gap-2">
-            {showAddAssignmentForm ? (
-              <form onSubmit={handleAddAssignment} className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-200">
-                <input 
-                  autoFocus
-                  type="text"
-                  placeholder="عنوان الدرجة..."
-                  value={newAssignmentTitle}
-                  onChange={(e) => setNewAssignmentTitle(e.target.value)}
-                  className="px-4 py-2 bg-white border border-indigo-200 rounded-xl outline-none focus:border-indigo-500 shadow-sm transition-all"
-                />
-                <button type="submit" className="bg-emerald-500 text-white p-2 rounded-xl hover:bg-emerald-600">
-                  <UserCheck size={18} />
-                </button>
-                <button type="button" onClick={() => setShowAddAssignmentForm(false)} className="bg-slate-100 text-slate-500 p-2 rounded-xl">
-                  <X size={18} />
-                </button>
-              </form>
-            ) : (
-              <button 
-                onClick={() => setShowAddAssignmentForm(true)}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 hover:bg-indigo-700 transition-all font-bold shadow-lg shadow-indigo-200"
-              >
-                <Plus size={18} />
-                <span>إضافة تقييم</span>
-              </button>
-            )}
-          </div>
         </div>
       </div>
 
@@ -181,7 +165,8 @@ export default function ClassDetailView({ selectedClass, onBack, onUpdateClass, 
         <CSVImportModal 
           onClose={() => setShowImportModal(false)}
           onImport={handleImportStudents}
-          assignments={selectedClass.assignments || []}
+          assignments={FIXED_ASSIGNMENTS as Assignment[]}
+          currentSubject={currentSubject}
         />
       )}
 
@@ -197,8 +182,8 @@ export default function ClassDetailView({ selectedClass, onBack, onUpdateClass, 
         <table className="w-full text-right border-collapse min-w-[800px]">
           <thead>
             <tr className="bg-white/40 backdrop-blur-md border-b border-white/40">
-              <th className="p-5 font-bold text-indigo-950 w-64">الطالب</th>
-              {(selectedClass.assignments || []).map(a => (
+              <th className="p-5 font-bold text-indigo-950 w-64 text-right">الطالب</th>
+              {FIXED_ASSIGNMENTS.map(a => (
                 <th key={a.id} className="p-5 font-bold text-indigo-950 text-center">
                   <div className="flex flex-col items-center">
                     <span>{a.title}</span>
@@ -206,24 +191,18 @@ export default function ClassDetailView({ selectedClass, onBack, onUpdateClass, 
                   </div>
                 </th>
               ))}
-              <th className="p-5 font-bold text-indigo-950 text-center">المجموع (%)</th>
-              <th className="p-5 font-bold text-indigo-950 text-center text-indigo-600 bg-indigo-50/30">المعدل النهائي (%)</th>
+              <th className="p-5 font-bold text-indigo-950 text-center">المجموع</th>
+              <th className="p-5 font-bold text-indigo-950 text-center text-indigo-600 bg-indigo-50/30">المعدل النهائي</th>
               <th className="p-5 font-bold text-indigo-950 text-center">الإجراءات</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/20">
             {students.map(s => {
-              const totalScore = (selectedClass.assignments || []).reduce((acc, a) => acc + ((s.grades || {})[a.id] || 0), 0);
-              const maxPossible = (selectedClass.assignments || []).reduce((acc, a) => acc + (a.maxScore || 0), 0);
-              const percentage = maxPossible > 0 ? (totalScore / maxPossible * 100).toFixed(1) : "0";
-
-              // Weighted Final Grade Calculation
-              const weightedPoints = (selectedClass.assignments || []).reduce((acc, a) => {
-                const score = (s.grades || {})[a.id] || 0;
-                return acc + (score / (a.maxScore || 1)) * a.weight;
-              }, 0);
-              const totalWeight = (selectedClass.assignments || []).reduce((acc, a) => acc + a.weight, 0);
-              const finalWeightedPercentage = totalWeight > 0 ? (weightedPoints / totalWeight * 100).toFixed(1) : "0";
+              const subjectGrades = (s.grades || {})[currentSubject] || {};
+              const totalScore = FIXED_ASSIGNMENTS.reduce((acc, a) => acc + (subjectGrades[a.id] || 0), 0);
+              const maxPossible = FIXED_ASSIGNMENTS.reduce((acc, a) => acc + (a.maxScore || 0), 0);
+              const scorePercentage = maxPossible > 0 ? (totalScore / maxPossible * 100) : 0;
+              const letterGrade = getLetterGrade(scorePercentage);
 
               return (
                 <tr key={s.id} className="hover:bg-white/30 transition-colors group">
@@ -258,12 +237,17 @@ export default function ClassDetailView({ selectedClass, onBack, onUpdateClass, 
                       )}
                     </div>
                   </td>
-                  {(selectedClass.assignments || []).map(a => (
+                  {FIXED_ASSIGNMENTS.map(a => (
                     <td key={a.id} className="p-5 text-center">
                       <input 
                         type="number" 
-                        value={(s.grades || {})[a.id] ?? ""}
-                        onChange={(e) => handleGradeChange(s.id, a.id, e.target.value)}
+                        max={a.maxScore}
+                        min={0}
+                        value={subjectGrades[a.id] ?? ""}
+                        onChange={(e) => {
+                          const val = Math.min(a.maxScore, Math.max(0, parseInt(e.target.value) || 0));
+                          handleGradeChange(s.id, a.id, val.toString());
+                        }}
                         className="w-16 h-10 bg-white/20 border border-white/60 rounded-xl text-center font-bold text-indigo-900 focus:bg-white/60 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder-indigo-300"
                         placeholder="-"
                       />
@@ -271,23 +255,38 @@ export default function ClassDetailView({ selectedClass, onBack, onUpdateClass, 
                   ))}
                   <td className="p-5 text-center">
                     <span className={cn(
-                      "px-4 py-1.5 rounded-full text-xs font-black shadow-sm",
-                      Number(percentage) >= 90 ? "bg-green-100/80 text-green-700 border border-green-200" :
-                      Number(percentage) >= 75 ? "bg-blue-100/80 text-blue-700 border border-blue-200" :
-                      "bg-orange-100/80 text-orange-700 border border-orange-200"
+                      "px-4 py-1.5 rounded-full text-sm font-black shadow-sm",
+                      scorePercentage >= 90 ? "bg-green-100 text-green-700 border border-green-200" :
+                      scorePercentage >= 75 ? "bg-blue-100 text-blue-700 border border-blue-200" :
+                      scorePercentage >= 50 ? "bg-orange-100 text-orange-700 border border-orange-200" :
+                      "bg-rose-100 text-rose-700 border border-rose-200"
                     )}>
-                      {percentage}%
+                      {totalScore}
                     </span>
                   </td>
                   <td className="p-5 text-center bg-indigo-50/10">
-                    <span className={cn(
-                      "px-4 py-1.5 rounded-full text-xs font-black shadow-sm ring-2 ring-indigo-500/10",
-                      Number(finalWeightedPercentage) >= 90 ? "bg-green-500 text-white" :
-                      Number(finalWeightedPercentage) >= 75 ? "bg-indigo-500 text-white" :
-                      "bg-orange-500 text-white"
-                    )}>
-                      {finalWeightedPercentage}%
-                    </span>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className={cn(
+                        "w-10 h-10 flex items-center justify-center rounded-xl text-lg font-black shadow-sm ring-2 ring-indigo-500/10",
+                        letterGrade === "A" ? "bg-emerald-500 text-white" :
+                        letterGrade === "B" ? "bg-indigo-500 text-white" :
+                        letterGrade === "C" ? "bg-amber-500 text-white" :
+                        letterGrade === "D" ? "bg-orange-500 text-white" :
+                        "bg-rose-500 text-white"
+                      )}>
+                        {letterGrade}
+                      </span>
+                      <span className={cn(
+                        "text-[10px] font-bold",
+                        letterGrade === "A" ? "text-emerald-600" :
+                        letterGrade === "B" ? "text-indigo-600" :
+                        letterGrade === "C" ? "text-amber-600" :
+                        letterGrade === "D" ? "text-orange-600" :
+                        "text-rose-600"
+                      )}>
+                        {scorePercentage.toFixed(0)}%
+                      </span>
+                    </div>
                   </td>
                   <td className="p-5 text-center">
                     {userRole === 'admin' ? (

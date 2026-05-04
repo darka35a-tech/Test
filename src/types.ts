@@ -11,7 +11,7 @@ export interface AppUser {
 export interface Student {
   id: string;
   name: string;
-  grades: Record<string, number>; // assignmentId -> score
+  grades: Record<string, Record<string, number>>; // subject -> { assignmentId -> score }
   attendance: string[]; // dates of absence
 }
 

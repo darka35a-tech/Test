@@ -8,9 +8,9 @@ const DEFAULT_DATA: TeacherData = {
       id: "1",
       name: "الصف الأول - أ",
       students: [
-        { id: "s1", name: "أحمد محمد", grades: { "a1": 95, "a2": 88 }, attendance: [] },
-        { id: "s2", name: "سارة خالد", grades: { "a1": 100, "a2": 92 }, attendance: [] },
-        { id: "s3", name: "عبدالله عمر", grades: { "a1": 85, "a2": 78 }, attendance: ["2024-05-01"] },
+        { id: "s1", name: "أحمد محمد", grades: { "عربي": { "hw1": 9, "test1": 18 } }, attendance: [] },
+        { id: "s2", name: "سارة خالد", grades: { "عربي": { "hw1": 10, "test1": 20 } }, attendance: [] },
+        { id: "s3", name: "عبدالله عمر", grades: { "عربي": { "hw1": 8, "test1": 15 } }, attendance: ["2024-05-01"] },
       ],
       assignments: [
         { id: "a1", title: "اختبار دوري 1", maxScore: 100, weight: 20 },

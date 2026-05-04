@@ -8,9 +8,10 @@ interface CSVImportModalProps {
   onClose: () => void;
   onImport: (students: Student[]) => void;
   assignments: Assignment[];
+  currentSubject: string;
 }
 
-export default function CSVImportModal({ onClose, onImport, assignments }: CSVImportModalProps) {
+export default function CSVImportModal({ onClose, onImport, assignments, currentSubject }: CSVImportModalProps) {
   const [step, setStep] = useState<"upload" | "map">("upload");
   const [csvData, setCsvData] = useState<any[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
@@ -44,17 +45,19 @@ export default function CSVImportModal({ onClose, onImport, assignments }: CSVIm
     }
 
     const importedStudents: Student[] = csvData.map((row: any) => {
-      const studentGrades: Record<string, number> = {};
+      const subjectGrades: Record<string, number> = {};
       Object.entries(mapping.grades).forEach(([assignmentId, csvHeader]) => {
         if (csvHeader) {
-          studentGrades[assignmentId] = parseFloat(String(row[csvHeader as string])) || 0;
+          subjectGrades[assignmentId] = parseFloat(String(row[csvHeader as string])) || 0;
         }
       });
 
       return {
         id: Math.random().toString(36).substr(2, 9),
         name: String(row[mapping.name as string] || ""),
-        grades: studentGrades,
+        grades: {
+          [currentSubject]: subjectGrades
+        },
         attendance: [],
       };
     });
