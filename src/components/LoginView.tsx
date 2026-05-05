@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { GraduationCap, Lock, User, ShieldCheck, AlertCircle } from "lucide-react";
+import { GraduationCap, Lock, User, ShieldCheck, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { type AppUser, type TeacherAccount } from "../types";
 
 interface LoginViewProps {
@@ -11,6 +11,7 @@ export default function LoginView({ onLogin, authorizedTeachers }: LoginViewProp
   const [selectedRole, setSelectedRole] = useState<"teacher" | "admin">("teacher");
   const [teacherName, setTeacherName] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
   const handleLogin = (e: React.FormEvent) => {
@@ -121,12 +122,30 @@ export default function LoginView({ onLogin, authorizedTeachers }: LoginViewProp
             <div className="relative">
               <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input 
-                type="password" 
+                type={showPassword ? "text" : "password"} 
                 placeholder="الرقم السري" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pr-12 pl-4 py-4 bg-white/40 border border-white/60 rounded-2xl outline-none focus:bg-white/60 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold"
+                className="w-full pr-12 pl-12 py-4 bg-white/40 border border-white/60 rounded-2xl outline-none focus:bg-white/60 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-bold text-right"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                title={showPassword ? "إخفاء كلمة السر" : "إظهار كلمة السر"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            
+            <div className="flex justify-start px-2">
+              <button 
+                type="button"
+                onClick={() => setError("يرجى مراجعة مديرة المدرسة لاستعادة الرقم السري الخاص بكِ.")}
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+              >
+                نسيتي كلمة السر؟
+              </button>
             </div>
           </div>
 
