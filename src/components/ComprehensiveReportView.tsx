@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { type TeacherData, type Student } from "../types";
+import React, { useState } from "react";
+import { type TeacherData } from "../types";
 import { FIXED_ASSIGNMENTS, getLetterGrade } from "../constants";
 import { 
   FileText, 
@@ -7,11 +7,10 @@ import {
   Filter,
   CheckCircle2,
   FileDown,
-  Printer
+  Printer,
+  ChevronLeft
 } from "lucide-react";
 import { cn } from "../lib/utils";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 
 interface ComprehensiveReportViewProps {
   teacherData: TeacherData;
@@ -20,8 +19,6 @@ interface ComprehensiveReportViewProps {
 export default function ComprehensiveReportView({ teacherData }: ComprehensiveReportViewProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClassId, setSelectedClassId] = useState<string>("all");
-  const [isExporting, setIsExporting] = useState(false);
-  const reportRef = useRef<HTMLDivElement>(null);
 
   const SUBJECTS = ["عربي", "انجليزي", "علوم", "رياضيات"];
 
@@ -56,65 +53,46 @@ export default function ComprehensiveReportView({ teacherData }: ComprehensiveRe
     )
     .filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  const exportToPDF = async () => {
-    if (!reportRef.current) return;
-    setIsExporting(true);
-    
-    try {
-      const element = reportRef.current;
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        windowWidth: 1400
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "landscape",
-        unit: "mm",
-        format: "a4"
-      });
-
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save("تقرير_درجات_الطلاب.pdf");
-    } catch (err) {
-      console.error("PDF Export failed:", err);
-      alert("حدث خطأ أثناء تصدير الملف. يرجى المحاولة مرة أخرى.");
-    } finally {
-      setIsExporting(false);
-    }
+  const handlePrint = () => {
+    window.print();
   };
 
-  const exportToHTMLExport = () => {
+  const exportStandAloneHTML = () => {
     const reportStyles = `
       @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
-      body { font-family: 'Tajawal', sans-serif; direction: rtl; padding: 40px; background: #f8fafc; color: #1e1b4b; }
-      table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
-      th { background: #4f46e5; color: white; padding: 15px; text-align: center; }
-      td { padding: 15px; border-bottom: 1px solid #e2e8f0; text-align: center; }
-      .name-col { text-align: right; font-weight: bold; }
-      .grade-a { background: #10b981; color: white; border-radius: 8px; padding: 4px 8px; font-weight: 900; }
-      .grade-b { background: #6366f1; color: white; border-radius: 8px; padding: 4px 8px; font-weight: 900; }
-      .grade-c { background: #f59e0b; color: white; border-radius: 8px; padding: 4px 8px; font-weight: 900; }
-      .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #4f46e5; padding-bottom: 20px; margin-bottom: 30px; }
-      .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 40px; }
-      .stat-card { background: white; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; text-align: center; }
-      @media print { body { background: white; padding: 0; } .no-print { display: none; } }
+      :root { --primary: #4f46e5; --bg: #f8fafc; }
+      * { box-sizing: border-box; }
+      body { font-family: 'Tajawal', sans-serif; direction: rtl; padding: 40px; background: var(--bg); color: #1e1b4b; line-height: 1.6; }
+      .container { max-width: 1200px; margin: 0 auto; background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+      .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 30px; }
+      .header h1 { margin: 0; color: var(--primary); font-size: 24px; }
+      .header p { margin: 5px 0 0 0; color: #64748b; font-weight: bold; }
+      table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+      th { background: #f1f5f9; color: #475569; padding: 15px; font-weight: 900; text-align: center; border-bottom: 2px solid #e2e8f0; }
+      td { padding: 15px; border-bottom: 1px solid #f1f5f9; text-align: center; font-weight: bold; }
+      tr:nth-child(even) { background: #f8fafc; }
+      .student-name { text-align: right; color: #1e1b4b; min-width: 200px; }
+      .badge { display: inline-block; padding: 4px 12px; border-radius: 8px; font-size: 14px; font-weight: 900; }
+      .badge-a { background: #dcfce7; color: #166534; }
+      .badge-b { background: #e0e7ff; color: #3730a3; }
+      .badge-c { background: #fef3c7; color: #92400e; }
+      .badge-f { background: #fee2e2; color: #991b1b; }
+      .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px; }
+      .stat-card { background: #f1f5f9; padding: 20px; border-radius: 16px; text-align: center; }
+      .stat-card .label { font-size: 14px; color: #64748b; margin-bottom: 5px; }
+      .stat-card .value { font-size: 24px; font-weight: 900; color: var(--primary); }
+      .no-print-btn { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 12px; cursor: pointer; font-family: inherit; font-weight: bold; transition: opacity 0.2s; }
+      .no-print-btn:hover { opacity: 0.9; }
+      @media print { .no-print { display: none !important; } body { padding: 0; background: white; } .container { box-shadow: none; padding: 0; max-width: 100%; } }
     `;
 
     const tableRows = studentsWithGrades.map(s => `
       <tr>
-        <td class="name-col">${s.name}</td>
+        <td class="student-name">${s.name}</td>
         <td>${s.className}</td>
         ${SUBJECTS.map(sub => `<td>${s.subjectTotals[sub]}</td>`).join('')}
-        <td style="font-weight: 900; color: #4338ca;">${s.grandTotal} (${s.overallPercentage.toFixed(0)}%)</td>
-        <td><span class="grade-${s.letterGrade.toLowerCase()}">${s.letterGrade}</span></td>
+        <td style="color: var(--primary); font-size: 18px;">${s.grandTotal}</td>
+        <td><span class="badge badge-${s.letterGrade.toLowerCase()}">${s.letterGrade}</span></td>
       </tr>
     `).join('');
 
@@ -123,51 +101,54 @@ export default function ComprehensiveReportView({ teacherData }: ComprehensiveRe
       <html lang="ar" dir="rtl">
       <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>تقرير درجات الطلاب - ${new Date().toLocaleDateString('ar-SA')}</title>
         <style>${reportStyles}</style>
       </head>
       <body>
-        <div class="header">
-          <div>
-            <h1 style="margin:0; font-size: 28px;">تقرير درجات الطلاب الشامل</h1>
-            <p style="margin:5px 0 0 0; color: #64748b;">تاريخ التقرير: ${new Date().toLocaleDateString('ar-SA')}</p>
+        <div class="container">
+          <div class="header">
+            <div>
+              <h1>تقرير درجات الطلاب الشامل</h1>
+              <p>تاريخ الاستخراج: ${new Date().toLocaleDateString('ar-SA')}</p>
+            </div>
+            <div class="no-print">
+              <button class="no-print-btn" onclick="window.print()">طباعة كـ PDF</button>
+            </div>
           </div>
-          <div class="no-print">
-            <button onclick="window.print()" style="background: #4f46e5; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold;">طباعة التقرير</button>
-          </div>
-        </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th style="text-align: right;">اسم الطالب</th>
-              <th>الفصل</th>
-              ${SUBJECTS.map(sub => `<th>${sub}</th>`).join('')}
-              <th>المجموع</th>
-              <th>التقدير</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${tableRows}
-          </tbody>
-        </table>
+          <table>
+            <thead>
+              <tr>
+                <th style="text-align: right;">اسم الطالب</th>
+                <th>الفصل</th>
+                ${SUBJECTS.map(sub => `<th>${sub}</th>`).join('')}
+                <th>المجموع</th>
+                <th>التقدير</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
 
-        <div class="stats">
-          <div class="stat-card">
-            <div style="font-size: 14px; color: #64748b; margin-bottom: 5px;">إجمالي الطلاب</div>
-            <div style="font-size: 24px; font-weight: 900;">${studentsWithGrades.length}</div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="label">إجمالي الطلاب</div>
+              <div class="value">${studentsWithGrades.length}</div>
+            </div>
+            <div class="stat-card">
+              <div class="label">نسبة النجاح</div>
+              <div class="value">${Math.round((studentsWithGrades.filter(s => s.overallPercentage >= 60).length / (studentsWithGrades.length || 1)) * 100)}%</div>
+            </div>
+            <div class="stat-card">
+              <div class="label">متوسط الدرجات</div>
+              <div class="value">${(studentsWithGrades.reduce((acc, s) => acc + s.overallPercentage, 0) / (studentsWithGrades.length || 1)).toFixed(1)}%</div>
+            </div>
           </div>
-          <div class="stat-card">
-            <div style="font-size: 14px; color: #64748b; margin-bottom: 5px;">نسبة النجاح</div>
-            <div style="font-size: 24px; font-weight: 900; color: #10b981;">${Math.round((studentsWithGrades.filter(s => s.overallPercentage >= 60).length / (studentsWithGrades.length || 1)) * 100)}%</div>
-          </div>
-          <div class="stat-card">
-            <div style="font-size: 14px; color: #64748b; margin-bottom: 5px;">متوسط الدرجات</div>
-            <div style="font-size: 24px; font-weight: 900; color: #4f46e5;">${(studentsWithGrades.reduce((acc, s) => acc + s.overallPercentage, 0) / (studentsWithGrades.length || 1)).toFixed(1)}%</div>
-          </div>
-          <div class="stat-card">
-            <div style="font-size: 14px; color: #64748b; margin-bottom: 5px;">تاريخ الاستخراج</div>
-            <div style="font-size: 16px; font-weight: bold;">${new Date().toLocaleDateString('ar-SA')}</div>
+          
+          <div style="margin-top: 40px; text-align: center; color: #94a3b8; font-size: 12px;" class="no-print">
+            تم استخراج هذا الملف من نظام "أسرار" المدرسي. لضمان سلامة الأرقام، استخدم خيار الطباعة المدمج في المتصفح.
           </div>
         </div>
       </body>
@@ -176,17 +157,16 @@ export default function ComprehensiveReportView({ teacherData }: ComprehensiveRe
 
     const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `تقرير_الطلاب_${new Date().toLocaleDateString('ar-SA')}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const handlePrint = () => {
-    window.print();
+    const win = window.open(url, '_blank');
+    if (!win) {
+      // Fallback if popup blocked
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `تقرير_الطلاب_${new Date().toLocaleDateString('ar-SA')}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   return (
@@ -205,19 +185,19 @@ export default function ComprehensiveReportView({ teacherData }: ComprehensiveRe
             className="bg-white text-indigo-600 border-2 border-indigo-100 px-6 py-3 rounded-2xl flex items-center gap-2 hover:bg-indigo-50 transition-all font-bold shadow-sm"
           >
             <Printer size={20} />
-            <span>طباعة التقرير</span>
+            <span>طباعة سريعة</span>
           </button>
           <button 
-            onClick={exportToHTMLExport}
+            onClick={exportStandAloneHTML}
             className="bg-indigo-600 text-white px-6 py-3 rounded-2xl flex items-center gap-2 hover:bg-indigo-700 transition-all font-bold shadow-lg shadow-indigo-200"
           >
             <FileDown size={20} />
-            <span>تصدير كملف HTML (للإحتفاظ بالعربية)</span>
+            <span>تصدير تقرير احترافي (HTML)</span>
           </button>
         </div>
       </div>
 
-      <div ref={reportRef} className="space-y-6 bg-white p-4 rounded-[2rem] print:p-0 print:m-0 print:shadow-none print:bg-white overflow-hidden">
+      <div className="space-y-6 bg-white p-4 rounded-[2rem] print:p-0 print:m-0 print:shadow-none print:bg-white overflow-hidden">
         {/* Only visible in print */}
         <div className="hidden print:block text-right mb-6 border-b-2 border-indigo-600 pb-4">
           <h1 className="text-3xl font-black text-indigo-900">تقرير درجات الطلاب الشامل</h1>
@@ -269,10 +249,10 @@ export default function ComprehensiveReportView({ teacherData }: ComprehensiveRe
               <tbody className="divide-y divide-slate-100">
                 {studentsWithGrades.length > 0 ? (
                   studentsWithGrades.map(s => (
-                    <tr key={s.id} className="hover:bg-indigo-50/30 transition-colors group">
+                    <tr key={s.id} className="group transition-colors print:hover:bg-transparent">
                       <td className="p-5">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 font-bold">
+                          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 font-bold print:hidden">
                             {s.name.charAt(0)}
                           </div>
                           <span className="font-bold text-indigo-950">{s.name}</span>
@@ -283,32 +263,18 @@ export default function ComprehensiveReportView({ teacherData }: ComprehensiveRe
                       </td>
                       {SUBJECTS.map(sub => {
                         const total = s.subjectTotals[sub];
-                        const percentage = (total / maxPossiblePerSubject) * 100;
                         return (
                           <td key={sub} className="p-5 text-center">
-                            <div className="flex flex-col items-center gap-1">
-                              <span className={cn(
-                                "font-black text-lg",
-                                percentage >= 90 ? "text-emerald-600" :
-                                percentage >= 75 ? "text-indigo-600" :
-                                percentage >= 50 ? "text-amber-600" : "text-rose-600"
-                              )}>
-                                {total}
-                              </span>
-                              <span className="text-[10px] text-slate-400 font-bold">{maxPossiblePerSubject}/</span>
-                            </div>
+                            <span className="font-black text-lg text-slate-700">
+                              {total}
+                            </span>
                           </td>
                         );
                       })}
                       <td className="p-5 text-center bg-indigo-50/30">
-                        <div className="flex flex-col items-center">
-                          <span className="text-xl font-black text-indigo-700">
-                            {s.grandTotal}
-                          </span>
-                          <span className="text-xs font-bold text-indigo-400">
-                            {s.overallPercentage.toFixed(0)}%
-                          </span>
-                        </div>
+                        <span className="text-xl font-black text-indigo-700">
+                          {s.grandTotal}
+                        </span>
                       </td>
                       <td className="p-5 text-center bg-indigo-50/50">
                         <span className={cn(

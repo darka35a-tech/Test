@@ -12,6 +12,31 @@
   }
 }
 
+@media print {
+  body {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .no-print, 
+  nav, 
+  button:not(.print-only),
+  .filters-container {
+    display: none !important;
+  }
+  
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+  
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
 .glass {
   @apply backdrop-blur-md bg-white/40 border border-white/50 shadow-sm;
 }
